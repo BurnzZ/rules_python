@@ -17,6 +17,7 @@ Implementation for the macro to generate a console_script py_binary from an 'ent
 """
 
 load("//python:py_binary.bzl", "py_binary")
+load("//python:py_test.bzl", "py_test")
 load(":py_console_script_gen.bzl", "py_console_script_gen")
 
 def _dist_info(pkg):
@@ -72,8 +73,14 @@ def py_console_script_binary(
     """
     main = "rules_python_entry_point_{}.py".format(name)
 
-    if kwargs.pop("srcs", None):
+    srcs = kwargs.pop("srcs", [])
+
+    if binary_rule == py_test:
+        srcs = srcs + [main]
+    elif srcs:
         fail("passing 'srcs' attribute to py_console_script_binary is unsupported")
+    else:
+        srcs = [main]
 
     py_console_script_gen(
         name = "_{}_gen".format(name),
@@ -86,7 +93,7 @@ def py_console_script_binary(
 
     binary_rule(
         name = name,
-        srcs = [main],
+        srcs = srcs,
         main = main,
         deps = [pkg] + kwargs.pop("deps", []),
         **kwargs
